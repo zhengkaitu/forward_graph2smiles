@@ -1,92 +1,83 @@
-# graph2smiles
+# Augmented Transformer
+Benchmarking and serving modules for reaction outcome prediction with Graph2SMILES, based on the manuscript (https://pubs.acs.org/doi/abs/10.1021/acs.jcim.2c00321).
 
+## Serving
 
+### Step 1/4: Environment Setup
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
+First set up the url to the remote registry
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/mlpds_mit/askcosv2/forward_predictor/graph2smiles.git
-git branch -M main
-git push -uf origin main
+export ASKCOS_REGISTRY=registry.gitlab.com/mlpds_mit/askcosv2
+```
+Then follow the instructions below to use either Docker, or Singularity (if Docker or root privilege is not available). Building or pulling either CPU or GPU image would suffice. If GPUs are not available, just go with the CPU image.
+
+#### Using Docker
+
+- Option 1: pull pre-built image
+```
+(CPU) docker pull ${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-cpu
+(GPU) docker pull ${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-gpu
+```
+- Option 2: build from local
+```
+(CPU) docker build -f Dockerfile_cpu -t ${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-cpu .
+(GPU) docker build -f Dockerfile_gpu -t ${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-gpu .
 ```
 
-## Integrate with your tools
+#### Using Singularity
 
-- [ ] [Set up project integrations](https://gitlab.com/mlpds_mit/askcosv2/forward_predictor/graph2smiles/-/settings/integrations)
+- Option 1: pull pre-built *docker* image (NOT recommended)
+```
+(CPU) singularity pull forward_graph2smiles_cpu.sif docker://${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-cpu
+(GPU) singularity pull forward_graph2smiles_gpu.sif docker://${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-gpu
+```
+- Option 2: build from local
+```
+(CPU) singularity build -f forward_graph2smiles_cpu.sif singularity_cpu.def
+(GPU) singularity build -f forward_graph2smiles_gpu.sif singularity_gpu.def
+```
 
-## Collaborate with your team
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+## Benchmarking (GPU Required)
 
-## Test and Deploy
+### Step 1/4: Environment Setup
+Follow the instructions in Step 1 in the Serving section to build or pull the GPU docker image. It should have the name `${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-gpu`
 
-Use the built-in continuous integration in GitLab.
+Note: the Docker needs to be rebuilt before running whenever there is any change in code.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### Step 2/4: Data Preparation
+Prepare the raw .csv files for train, validation and test (atom mapping not required). The required columns are "id" and "rxn_smiles", where "rxn_smiles" contains reaction SMILES, optionally with atom mapping.
 
-***
+### Step 3/4: Path Configuration
+Configure the environment variables in ./scripts/benchmark_in_docker.sh, especially the paths, to point to the *absolute* paths of raw files and desired output paths.
+```
+export DATA_NAME="USPTO_480k_mix"
+export TRAIN_FILE=$PWD/data/USPTO_480k_mix/raw/raw_train.csv
+export VAL_FILE=$PWD/data/USPTO_480k_mix/raw/raw_val.csv
+export TEST_FILE=$PWD/data/USPTO_480k_mix/raw/raw_test.csv
+...
+```
 
-# Editing this README
+### Step 4/4: Benchmarking
+Run benchmarking on a machine with GPU using
+```
+bash scripts/benchmark_in_docker.sh
+```
+This will run the preprocessing, training and predicting for Graph2SMILES with Top-n accuracies up to n=20 as the final outputs. Progress and result logs will be saved under ./logs.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+The estimated running times for benchmarking the USPTO_480k dataset on a 32-core machine with 1 RTX3090 GPU are
+* Preprocessing: ~1 hr
+* Training: ~40 hrs
+* Testing: ~30 mins
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+## Converting Trained Model into Servable Archive (Optional)
+If you want to create servable model archives from own checkpoints (e.g., trained on different datasets),
+please refer to the archiving scripts (scripts/archive_in_docker.sh).
+Change the arguments accordingly in the script before running.
+It's mostly bookkeeping by replacing the data name and/or checkpoint paths; the script should be self-explanatory. Then execute the scripts with
+```
+bash scripts/archive_in_docker.sh
+```
+The servable model archive (.mar) will be generated under ./mars. Serving newly archived models is straightforward; simply replace the `--models` args in `scripts/serve_{cpu,gp}_in_{docker,singularity}.sh`
 
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+with the new model name and .mar. The `--models` flag for torchserve can also take multiple arguments to serve multiple model archives concurrently.
