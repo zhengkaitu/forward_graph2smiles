@@ -140,7 +140,7 @@ def binarize_g2s(args):
         tgt_token_ids = np.stack(tgt_token_ids, axis=0)
         tgt_lens = np.array(tgt_lens, dtype=np.int32)
 
-        logging.info("Getting egraph features")
+        logging.info("Getting graph features")
         start = time.time()
 
         p = Pool(args.num_cores)

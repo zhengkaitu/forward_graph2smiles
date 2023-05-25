@@ -38,8 +38,6 @@ def add_preprocess_args(parser):
 def add_train_args(parser):
     group = parser.add_argument_group("Training options")
     # file paths
-    group.add_argument("--train_bin", help="Train npz", type=str, default="")
-    group.add_argument("--valid_bin", help="Valid npz", type=str, default="")
     group.add_argument("--load_from", help="Checkpoint to load", type=str, default="")
     # model params
     group.add_argument("--embed_size", help="Decoder embedding size", type=int, default=256)
@@ -50,7 +48,7 @@ def add_train_args(parser):
     group.add_argument("--latent", help="Latent modeling mode or number of latent class", type=str, default="1")
     # -------------- mpn encoder ---------------
     group.add_argument("--mpn_type", help="Type of MPN", type=str,
-                       choices=["dgcn", "dgat", "dgate", "dgates", "ffn"], default="ffn")
+                       choices=["dgcn", "dgat"], default="dgcn")
     group.add_argument("--encoder_num_layers", help="No. of layers in transformer/mpn encoder", type=int, default=4)
     group.add_argument("--dgat_attn_heads", help="DGAT no. of attention heads", type=int, default=8)
     group.add_argument("--encoder_hidden_size", help="Encoder hidden size", type=int, default=256)
@@ -113,7 +111,6 @@ def add_predict_args(parser):
     group.add_argument("--checkpoint_step_end", help="Last checkpoint step", type=int)
     group.add_argument("--predict_batch_size", help="Batch size for prediction", type=int, default=4096)
     # decoding params
-    group.add_argument("--test_bin", help="Test npz", type=str, default="")
     group.add_argument("--result_file", help="Result file", type=str, default="")
     group.add_argument("--beam_size", help="Beam size for decoding", type=int, default=0)
     group.add_argument("--n_best", help="Number of best results to be retained", type=int, default=10)

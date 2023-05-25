@@ -141,7 +141,8 @@ def make_vocab(args):
             of.write(f"{token}\t{count}\n")
 
 
-def load_vocab(vocab_file: str) -> Dict[str, int]:
+def load_vocab(args) -> Dict[str, int]:
+    vocab_file = os.path.join(args.processed_data_path, "vocab.txt")
     log_rank_0(f"Loading vocab from {vocab_file}")
     vocab = {}
     with open(vocab_file, "r") as f:
