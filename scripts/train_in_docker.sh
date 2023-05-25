@@ -28,8 +28,7 @@ docker run --rm --gpus '"device=0"' \
   -v "$MODEL_PATH":/app/graph2smiles/checkpoints/tmp_for_docker \
   -t "${ASKCOS_REGISTRY}"/forward_graph2smiles:1.0-gpu \
   python train.py \
-  --do_train \
-  --model_name="$MODEL" \
+  --model="$MODEL" \
   --data_name="$DATA_NAME" \
   --log_file="graph2smiles_train_$DATA_NAME" \
   --processed_data_path=/app/graph2smiles/data/tmp_for_docker/processed \
@@ -63,7 +62,7 @@ docker run --rm --gpus '"device=0"' \
   --clip_norm=20.0 \
   --batch_type="$BATCH_TYPE" \
   --train_batch_size="$BATCH_SIZE" \
-  --valid_batch_size="$BATCH_SIZE" \
+  --val_batch_size="$BATCH_SIZE" \
   --predict_batch_size="$BATCH_SIZE" \
   --accumulation_count=4 \
   --num_cores="$NUM_CORES" \

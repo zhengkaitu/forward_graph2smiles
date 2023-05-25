@@ -10,7 +10,7 @@ def log_args(args, phase: str):
 def add_common_args(parser):
     group = parser.add_argument_group("Meta")
     group.add_argument("--model", help="Model architecture",
-                       choices=["g2s"], type=str, default="g2s")
+                       choices=["graph2smiles"], type=str, default="graph2smiles")
     group.add_argument("--data_name", help="Data name", type=str, default="")
     group.add_argument("--task", help="Task", choices=["reaction_prediction", "retrosynthesis", "autoencoding"],
                        type=str, default="reaction_prediction")
@@ -45,7 +45,7 @@ def add_train_args(parser):
     group.add_argument("--mask_rel_chirality", help="Whether to mask relative chirality", type=int, default=0)
     group.add_argument("--shared_attention_layer", help="Whether to share attention layer", type=int, default=0)
     # latent modeling
-    group.add_argument("--latent", help="Latent modeling mode or number of latent class", type=str, default="1")
+    group.add_argument("--n_latent", help="Latent modeling mode or number of latent class", type=str, default="1")
     # -------------- mpn encoder ---------------
     group.add_argument("--mpn_type", help="Type of MPN", type=str,
                        choices=["dgcn", "dgat"], default="dgcn")
@@ -90,7 +90,7 @@ def add_train_args(parser):
     group.add_argument("--clip_norm", help="Max norm for gradient clipping", type=float, default=20.0)
     group.add_argument("--batch_type", help="batch type", type=str, default="tokens")
     group.add_argument("--train_batch_size", help="Batch size for train", type=int, default=4096)
-    group.add_argument("--valid_batch_size", help="Batch size for valid", type=int, default=4096)
+    group.add_argument("--val_batch_size", help="Batch size for valid", type=int, default=4096)
     group.add_argument("--accumulation_count", help="No. of batches for gradient accumulation", type=int, default=1)
     group.add_argument("--log_iter", help="No. of steps per logging", type=int, default=100)
     group.add_argument("--eval_iter", help="No. of steps per evaluation", type=int, default=100)

@@ -2,13 +2,13 @@ import numpy as np
 import os
 import time
 import torch
-from preprocess_utils import load_vocab
 from rdkit import Chem
 from torch.utils.data import Dataset
-from train_utils import log_rank_0
 from typing import List, Tuple
 from utils.chem_utils import ATOM_FDIM, BOND_FDIM, get_atom_features_sparse
 from utils.ctypes_calculator import DistanceCalculator
+from utils.preprocess_utils import load_vocab
+from utils.train_utils import log_rank_0
 
 
 def len2idx(lens) -> np.ndarray:
@@ -98,8 +98,7 @@ class G2SDataset(Dataset):
         self.batch_starts = []
         self.batch_ends = []
 
-        vocab_file = os.path.join(args.processed_data_path, "vocab.txt")
-        self.vocab = load_vocab(vocab_file)
+        self.vocab = load_vocab(args)
         self.vocab_tokens = [k for k, v in sorted(self.vocab.items(), key=lambda tup: tup[1])]
 
         log_rank_0(f"Loading preprocessed features from {file}")

@@ -86,7 +86,7 @@ def get_optimizer_and_scheduler(args, model, state):
     )
     scheduler = NoamLR(
         optimizer,
-        model_size=args.dec_hidden_size,
+        model_size=args.decoder_hidden_size,
         warmup_steps=args.warmup_steps
     )
 
@@ -146,7 +146,7 @@ def train_main(args):
     vocab_file = os.path.join(args.processed_data_path, "vocab.txt")
     if not os.path.exists(vocab_file):
         raise ValueError(f"Vocab file {vocab_file} not found!")
-    vocab = load_vocab(vocab_file)
+    vocab = load_vocab(args)
 
     os.makedirs(args.model_path, exist_ok=True)
     model_class = Graph2SMILES
@@ -169,7 +169,6 @@ def train_main(args):
     accum = 0
     g_norm = 0
     losses, accs, ems = [], [], []
-    accts_top1, accts_topk = [], []
     o_start = time.time()
     log_rank_0("Start training")
 
@@ -185,14 +184,12 @@ def train_main(args):
                 log_rank_0("Max steps reached, finish training")
                 exit(0)
             train_batch.to(device)
-            loss, acc, em, acct_top1, acct_topk = \
-                model(train_batch, mode="train")
+            batch_losses, acc, em = model(train_batch)
+            loss = batch_losses.mean()
             loss.backward()
             losses.append(loss.item())
             accs.append(acc.item() * 100)
             ems.append(em.item() * 100)
-            accts_top1.append(acct_top1 * 100)
-            accts_topk.append(acct_topk * 100)
 
             accum += 1
             if accum == args.accumulation_count:
@@ -203,19 +200,15 @@ def train_main(args):
             if (accum == 0) and (total_step > 0) and (total_step % args.log_iter == 0):
                 log_rank_0(f"Step {total_step}, loss: {np.mean(losses)}, "
                            f"acc: {np.mean(accs): .4f}, em: {np.mean(ems): .4f}, "
-                           f"acct_top1: {np.mean(accts_top1): .4f}, "
-                           f"acct_topk: {np.mean(accts_topk): .4f}, "
                            f"p_norm: {param_norm(model): .4f}, g_norm: {g_norm: .4f}, "
                            f"lr: {get_lr(optimizer): .6f}, "
                            f"elapsed time: {time.time() - o_start: .0f}")
                 losses, accs, ems = [], [], []
-                accts_top1, accts_topk = [], []
 
             if (accum == 0) and (total_step > 0) and (total_step % args.eval_iter == 0):
                 model.eval()
                 val_count = 100
                 val_losses, val_accs, val_ems = [], [], []
-                val_accts_top1, val_accts_topk = [], []
 
                 val_loader = init_loader(args, val_dataset,
                                          batch_size=args.val_batch_size,
@@ -226,26 +219,23 @@ def train_main(args):
                         if val_idx >= val_count:
                             break
                         val_batch.to(device)
-                        val_loss, val_acc, val_em, val_acct_top1, val_acct_topk = \
-                            model(val_batch, mode="val")
+                        val_batch_losses, val_acc, val_em = model(val_batch)
+                        val_loss = val_batch_losses.mean()
                         val_losses.append(val_loss.item())
                         val_accs.append(val_acc.item() * 100)
                         val_ems.append(val_em.item() * 100)
-                        val_accts_top1.append(val_acct_top1 * 100)
-                        val_accts_topk.append(val_acct_topk * 100)
 
                 log_rank_0(f"Validation (with teacher) at step {total_step}, "
                            f"val loss: {np.mean(val_losses)}, "
-                           f"val acc: {np.mean(val_accs): .4f}, val em: {np.mean(val_ems): .4f}, "
-                           f"val acct_top1: {np.mean(val_accts_top1): .4f}, "
-                           f"val acct_topk: {np.mean(val_accts_topk): .4f}")
+                           f"val acc: {np.mean(val_accs): .4f}, "
+                           f"val em: {np.mean(val_ems): .4f}")
                 model.train()
 
             # Important: saving only at one node or the ckpt would be corrupted!
             if dist.is_initialized() and dist.get_rank() > 0:
                 continue
 
-            if (total_step > 0) and (total_step % args.save_iter == 0):
+            if (accum == 0) and (total_step > 0) and (total_step % args.save_iter == 0):
                 n_iter = total_step // args.save_iter - 1
                 log_rank_0(f"Saving at step {total_step}")
                 state = {

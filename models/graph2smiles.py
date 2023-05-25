@@ -19,7 +19,7 @@ class Graph2SMILES(nn.Module):
         self.args = args
         self.vocab = vocab
         self.vocab_size = len(self.vocab)
-        self.n_latent = args.n_latent
+        self.n_latent = int(args.n_latent)
 
         while args.enable_amp and not self.vocab_size % 8 == 0:
             self.vocab_size += 1
