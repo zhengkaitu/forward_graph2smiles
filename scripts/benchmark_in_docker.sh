@@ -12,6 +12,6 @@ export PROCESSED_DATA_PATH=$PWD/data/$DATA_NAME/processed
 export MODEL_PATH=$PWD/checkpoints/$DATA_NAME
 export TEST_OUTPUT_PATH=$PWD/results/$DATA_NAME
 
-#bash scripts/preprocess_in_docker.sh
+bash scripts/preprocess_in_docker.sh
 bash scripts/train_in_docker.sh
-#bash scripts/predict_in_docker.sh
+bash scripts/predict_in_docker.sh

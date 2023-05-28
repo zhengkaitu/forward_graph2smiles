@@ -25,6 +25,7 @@ def add_common_args(parser):
     group.add_argument("--processed_data_path", help="Path for saving preprocessed outputs",
                        type=str, default="")
     group.add_argument("--model_path", help="Path for saving checkpoints", type=str, default="")
+    group.add_argument("--test_output_path", help="Path for saving test outputs", type=str, default="")
 
 
 def add_preprocess_args(parser):

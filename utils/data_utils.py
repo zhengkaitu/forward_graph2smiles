@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import os
 import time
@@ -17,6 +18,28 @@ def len2idx(lens) -> np.ndarray:
     indices = np.stack([start_indices, end_indices], axis=1)
 
     return indices
+
+
+def canonicalize_smiles(smiles, remove_atom_number=True, trim=True, suppress_warning=False):
+    mol = Chem.MolFromSmiles(smiles)
+
+    if mol is None:
+        cano_smiles = ""
+
+    else:
+        try:
+            if trim and mol.GetNumHeavyAtoms() < 2:
+                if not suppress_warning:
+                    logging.info(f"Problematic smiles: {smiles}, setting it to 'CC'")
+                cano_smiles = "CC"          # TODO: hardcode to ignore
+            else:
+                if remove_atom_number:
+                    [a.ClearProp('molAtomMapNumber') for a in mol.GetAtoms()]
+                cano_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
+        except RuntimeError as e:
+            cano_smiles = ""
+
+    return cano_smiles
 
 
 class G2SBatch:

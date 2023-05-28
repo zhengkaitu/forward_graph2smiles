@@ -66,7 +66,7 @@ bash scripts/benchmark_in_docker.sh
 This will run the preprocessing, training and predicting for Graph2SMILES with Top-n accuracies up to n=20 as the final outputs. Progress and result logs will be saved under ./logs.
 
 The estimated running times for benchmarking the USPTO_480k dataset on a 32-core machine with 1 RTX3090 GPU are
-* Preprocessing: ~30 mins
+* Preprocessing: ~1 hr
 * Training: ~40 hrs
 * Testing: ~30 mins
 
