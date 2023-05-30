@@ -13,30 +13,79 @@ Then follow the instructions below to use either Docker, or Singularity (if Dock
 
 #### Using Docker
 
-- Option 1: pull pre-built image
+- Option 1: pull pre-built image (ASKCOSv2 permission required)
 ```
-(CPU) docker pull ${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-cpu
-(GPU) docker pull ${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-gpu
+(CPU) docker pull ${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-cpu
+(GPU) docker pull ${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-gpu
 ```
 - Option 2: build from local
 ```
-(CPU) docker build -f Dockerfile_cpu -t ${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-cpu .
-(GPU) docker build -f Dockerfile_gpu -t ${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-gpu .
+(CPU) docker build -f Dockerfile_cpu -t ${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-cpu .
+(GPU) docker build -f Dockerfile_gpu -t ${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-gpu .
 ```
 
 #### Using Singularity
 
 - Option 1: pull pre-built *docker* image (NOT recommended)
 ```
-(CPU) singularity pull forward_graph2smiles_cpu.sif docker://${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-cpu
-(GPU) singularity pull forward_graph2smiles_gpu.sif docker://${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-gpu
+(CPU) singularity pull graph2smiles_cpu.sif docker://${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-cpu
+(GPU) singularity pull graph2smiles_gpu.sif docker://${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-gpu
 ```
-- Option 2: build from local
+- Option 2: build from local (recommended)
 ```
-(CPU) singularity build -f forward_graph2smiles_cpu.sif singularity_cpu.def
-(GPU) singularity build -f forward_graph2smiles_gpu.sif singularity_gpu.def
+(CPU) singularity build -f graph2smiles_cpu.sif singularity_cpu.def
+(GPU) singularity build -f graph2smiles_gpu.sif singularity_gpu.def
 ```
 
+### Step 2/4: Download Trained Models
+
+```
+sh scripts/download_trained_models.sh
+```
+
+### Step 3/4: Start the Service
+
+#### Using Docker
+
+```
+(CPU) sh scripts/serve_cpu_in_docker.sh
+(GPU) sh scripts/serve_gpu_in_docker.sh
+```
+Note that the `-d` flag may be added to the `docker run` commands to start the service in daemon mode (i.e., in the background). GPU-based container requires a CUDA-enabled GPU and the <a href="https://www.example.com/my great page">NVIDIA Container Toolkit</a> (or nvidia-docker in the past). By default, the first GPU will be used.
+
+#### Using Singularity
+
+```
+(CPU) sh scripts/serve_cpu_in_singularity.sh
+(GPU) sh scripts/serve_gpu_in_singularity.sh
+```
+The error messages related to torchserve logging can be safely ignored.
+
+### Step 4/4: Query the Service
+
+- Sample query
+```
+curl http://0.0.0.0:9520/predictions/USPTO_480k_mix \
+    --header "Content-Type: application/json" \
+    --request POST \
+    --data '{"smiles": ["[CH2:23]1[O:24][CH2:25][CH2:26][CH2:27]1.[F:1][c:2]1[c:3]([N+:10](=[O:11])[O-:12])[cH:4][c:5]([F:9])[c:6]([F:8])[cH:7]1.[H-:22].[NH2:13][c:14]1[s:15][cH:16][cH:17][c:18]1[C:19]#[N:20].[Na+:21]"]}'
+```
+- Sample response
+```
+List of
+{
+    "products": List[str],
+    "scores": List[float]
+},
+```
+
+### Unit Test for Serving (Optional)
+Requirement: `requests` and `pytest` libraries (pip installable)
+
+With the service started, run
+```
+pytest
+```
 
 ## Benchmarking (GPU Required)
 
@@ -61,7 +110,7 @@ export TEST_FILE=$PWD/data/USPTO_480k_mix/raw/raw_test.csv
 ### Step 4/4: Benchmarking
 Run benchmarking on a machine with GPU using
 ```
-bash scripts/benchmark_in_docker.sh
+sh scripts/benchmark_in_docker.sh
 ```
 This will run the preprocessing, training and predicting for Graph2SMILES with Top-n accuracies up to n=20 as the final outputs. Progress and result logs will be saved under ./logs.
 
@@ -76,7 +125,7 @@ please refer to the archiving scripts (scripts/archive_in_docker.sh).
 Change the arguments accordingly in the script before running.
 It's mostly bookkeeping by replacing the data name and/or checkpoint paths; the script should be self-explanatory. Then execute the scripts with
 ```
-bash scripts/archive_in_docker.sh
+sh scripts/archive_in_docker.sh
 ```
 The servable model archive (.mar) will be generated under ./mars. Serving newly archived models is straightforward; simply replace the `--models` args in `scripts/serve_{cpu,gp}_in_{docker,singularity}.sh`
 

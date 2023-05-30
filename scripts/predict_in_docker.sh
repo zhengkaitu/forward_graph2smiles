@@ -12,7 +12,7 @@ docker run --rm --gpus '"device=0"' \
   -v "$PROCESSED_DATA_PATH":/app/graph2smiles/data/tmp_for_docker/processed \
   -v "$MODEL_PATH":/app/graph2smiles/checkpoints/tmp_for_docker \
   -v "$TEST_OUTPUT_PATH":/app/augmented_transformer/results/tmp_for_docker \
-  -t "${ASKCOS_REGISTRY}"/forward_graph2smiles:1.0-gpu \
+  -t "${ASKCOS_REGISTRY}"/forward_predictor/graph2smiles:1.0-gpu \
   python predict.py \
   --do_predict \
   --do_score \

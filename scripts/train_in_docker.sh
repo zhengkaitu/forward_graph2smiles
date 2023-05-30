@@ -26,7 +26,7 @@ docker run --rm --gpus '"device=0"' \
   -v "$PWD/results":/app/graph2smiles/results \
   -v "$PROCESSED_DATA_PATH":/app/graph2smiles/data/tmp_for_docker/processed \
   -v "$MODEL_PATH":/app/graph2smiles/checkpoints/tmp_for_docker \
-  -t "${ASKCOS_REGISTRY}"/forward_graph2smiles:1.0-gpu \
+  -t "${ASKCOS_REGISTRY}"/forward_predictor/graph2smiles:1.0-gpu \
   python train.py \
   --model="$MODEL" \
   --data_name="$DATA_NAME" \

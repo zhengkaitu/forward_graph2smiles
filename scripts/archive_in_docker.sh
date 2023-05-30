@@ -28,7 +28,7 @@ docker run --rm \
   -v "$PWD/models.zip":/app/graph2smiles/models.zip \
   -v "$PWD/utils.zip":/app/graph2smiles/utils.zip \
   -v "$PWD/mars":/app/graph2smiles/mars \
-  -t "${ASKCOS_REGISTRY}"/forward_graph2smiles:1.0-gpu \
+  -t "${ASKCOS_REGISTRY}"/forward_predictor/graph2smiles:1.0-gpu \
   torch-model-archiver \
   --model-name=USPTO_480k_mix \
   --version=1.0 \

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 singularity exec \
-  forward_graph2smiles_cpu.sif \
+  graph2smiles_cpu.sif \
   torchserve \
   --start \
   --foreground \

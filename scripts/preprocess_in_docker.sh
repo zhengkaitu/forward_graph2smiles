@@ -8,7 +8,7 @@ docker run --rm \
   -v "$VAL_FILE":/app/graph2smiles/data/tmp_for_docker/raw_val.csv \
   -v "$TEST_FILE":/app/graph2smiles/data/tmp_for_docker/raw_test.csv \
   -v "$PROCESSED_DATA_PATH":/app/graph2smiles/data/tmp_for_docker/processed \
-  -t "${ASKCOS_REGISTRY}"/forward_graph2smiles:1.0-gpu \
+  -t "${ASKCOS_REGISTRY}"/forward_predictor/graph2smiles:1.0-gpu \
   python preprocess.py \
   --model_name="graph2smiles" \
   --data_name="$DATA_NAME" \
