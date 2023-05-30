@@ -90,7 +90,7 @@ pytest
 ## Benchmarking (GPU Required)
 
 ### Step 1/4: Environment Setup
-Follow the instructions in Step 1 in the Serving section to build or pull the GPU docker image. It should have the name `${ASKCOS_REGISTRY}/forward_graph2smiles:1.0-gpu`
+Follow the instructions in Step 1 in the Serving section to build or pull the GPU docker image. It should have the name `${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-gpu`
 
 Note: the Docker needs to be rebuilt before running whenever there is any change in code.
 
