@@ -1,4 +1,5 @@
-# Augmented Transformer
+# Graph2SMILES
+
 Benchmarking and serving modules for reaction outcome prediction with Graph2SMILES, based on the manuscript (https://pubs.acs.org/doi/abs/10.1021/acs.jcim.2c00321).
 
 ## Serving
@@ -26,12 +27,7 @@ Then follow the instructions below to use either Docker, or Singularity (if Dock
 
 #### Using Singularity
 
-- Option 1: pull pre-built *docker* image (NOT recommended)
-```
-(CPU) singularity pull graph2smiles_cpu.sif docker://${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-cpu
-(GPU) singularity pull graph2smiles_gpu.sif docker://${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-gpu
-```
-- Option 2: build from local (recommended)
+- Only Option: build from local
 ```
 (CPU) singularity build -f graph2smiles_cpu.sif singularity_cpu.def
 (GPU) singularity build -f graph2smiles_gpu.sif singularity_gpu.def
@@ -51,7 +47,7 @@ sh scripts/download_trained_models.sh
 (CPU) sh scripts/serve_cpu_in_docker.sh
 (GPU) sh scripts/serve_gpu_in_docker.sh
 ```
-Note that the `-d` flag may be added to the `docker run` commands to start the service in daemon mode (i.e., in the background). GPU-based container requires a CUDA-enabled GPU and the <a href="https://www.example.com/my great page">NVIDIA Container Toolkit</a> (or nvidia-docker in the past). By default, the first GPU will be used.
+GPU-based container requires a CUDA-enabled GPU and the <a href="https://www.example.com/my great page">NVIDIA Container Toolkit</a> (or nvidia-docker in the past). By default, the first GPU will be used.
 
 #### Using Singularity
 
@@ -59,7 +55,11 @@ Note that the `-d` flag may be added to the `docker run` commands to start the s
 (CPU) sh scripts/serve_cpu_in_singularity.sh
 (GPU) sh scripts/serve_gpu_in_singularity.sh
 ```
-The error messages related to torchserve logging can be safely ignored.
+The error messages related to torchserve logging can be safely ignored. Note that these scripts start the service in the background (i.e., in detached mode). So they would need to be explicitly stopped if no longer in use
+```
+(Docker)        docker stop forward_graph2smiles
+(Singularity)   singularity instance stop forward_graph2smiles
+```
 
 ### Step 4/4: Query the Service
 
@@ -80,6 +80,7 @@ List of
 ```
 
 ### Unit Test for Serving (Optional)
+
 Requirement: `requests` and `pytest` libraries (pip installable)
 
 With the service started, run
@@ -90,14 +91,17 @@ pytest
 ## Benchmarking (GPU Required)
 
 ### Step 1/4: Environment Setup
+
 Follow the instructions in Step 1 in the Serving section to build or pull the GPU docker image. It should have the name `${ASKCOS_REGISTRY}/forward_predictor/graph2smiles:1.0-gpu`
 
 Note: the Docker needs to be rebuilt before running whenever there is any change in code.
 
 ### Step 2/4: Data Preparation
+
 Prepare the raw .csv files for train, validation and test (atom mapping not required). The required columns are "id" and "rxn_smiles", where "rxn_smiles" contains reaction SMILES, optionally with atom mapping.
 
 ### Step 3/4: Path Configuration
+
 Configure the environment variables in ./scripts/benchmark_in_docker.sh, especially the paths, to point to the *absolute* paths of raw files and desired output paths.
 ```
 export DATA_NAME="USPTO_480k_mix"
@@ -108,6 +112,7 @@ export TEST_FILE=$PWD/data/USPTO_480k_mix/raw/raw_test.csv
 ```
 
 ### Step 4/4: Benchmarking
+
 Run benchmarking on a machine with GPU using
 ```
 sh scripts/benchmark_in_docker.sh
@@ -120,6 +125,7 @@ The estimated running times for benchmarking the USPTO_480k dataset on a 32-core
 * Testing: ~30 mins
 
 ## Converting Trained Model into Servable Archive (Optional)
+
 If you want to create servable model archives from own checkpoints (e.g., trained on different datasets),
 please refer to the archiving scripts (scripts/archive_in_docker.sh).
 Change the arguments accordingly in the script before running.
